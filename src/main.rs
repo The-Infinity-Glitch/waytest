@@ -1,3 +1,7 @@
+mod backend;
+mod handlers;
+mod state;
+
 #[derive(Debug)]
 enum Backend {
     // Runs the compositor in a Wayland or X11 window
@@ -13,6 +17,7 @@ struct StartSettings {
 }
 
 fn main() {
+    // Enable tracing showing in cmd
     init_tracing();
 
     let args: Vec<String> = std::env::args().collect();
@@ -24,7 +29,17 @@ fn main() {
 
     parse_args(args, &mut start_settings);
 
-    dbg!(start_settings);
+    match start_settings.backend {
+        Backend::Winit => {
+            tracing::info!("Starting compositor with winit backend.");
+            backend::winit::run_winit();
+        }
+        Backend::TtyUdev => {
+            tracing::info!("Starting compositor with tty-udev backend.");
+        }
+    }
+
+    tracing::info!("Compositor is shutting down.")
 }
 
 fn parse_args(args: Vec<String>, start_settings: &mut StartSettings) {
