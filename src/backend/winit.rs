@@ -1,3 +1,5 @@
+use crate::state;
+
 use std::time::Duration;
 
 use smithay::{
@@ -37,6 +39,4 @@ pub struct WinitData {
     dmabuf_state: (DmabufState, DmabufGlobal, Option<DmabufFeedback>),
 }
 
-pub fn run_winit() {
-    let mut event_loop: EventLoop<CalloopData<WinitData>> = EventLoop::try_new().unwrap();
-}
+pub fn run_winit() {}

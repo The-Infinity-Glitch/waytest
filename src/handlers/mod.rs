@@ -1,12 +1,60 @@
 mod compositor;
+mod xdg_shell;
 
 use crate::state;
 use smithay::{
-    delegate_seat,
+    delegate_data_device, delegate_seat,
     input::{Seat, SeatHandler, SeatState},
     reexports::wayland_server::{protocol::wl_surface::WlSurface, Resource},
-    wayland::selection::data_device::set_data_device_focus,
+    wayland::selection::{
+        data_device::{
+            set_data_device_focus, ClientDndGrabHandler, DataDeviceHandler, ServerDndGrabHandler,
+        },
+        SelectionHandler,
+    },
 };
+
+impl ServerDndGrabHandler for state::Waytest {}
+
+impl ClientDndGrabHandler for state::Waytest {}
+
+impl SelectionHandler for state::Waytest {
+    type SelectionUserData = ();
+
+    fn new_selection(
+        &mut self,
+        ty: smithay::wayland::selection::SelectionTarget,
+        source: Option<smithay::wayland::selection::SelectionSource>,
+        seat: Seat<Self>,
+    ) {
+    }
+
+    fn send_selection(
+        &mut self,
+        ty: smithay::wayland::selection::SelectionTarget,
+        mime_type: String,
+        fd: std::os::unix::prelude::OwnedFd,
+        seat: Seat<Self>,
+        user_data: &Self::SelectionUserData,
+    ) {
+    }
+}
+
+impl DataDeviceHandler for state::Waytest {
+    fn data_device_state(&self) -> &smithay::wayland::selection::data_device::DataDeviceState {
+        &self.data_device_state
+    }
+
+    fn action_choice(
+        &mut self,
+        available: smithay::reexports::wayland_server::protocol::wl_data_device_manager::DndAction,
+        preferred: smithay::reexports::wayland_server::protocol::wl_data_device_manager::DndAction,
+    ) -> smithay::reexports::wayland_server::protocol::wl_data_device_manager::DndAction {
+        smithay::wayland::selection::data_device::default_action_chooser(available, preferred)
+    }
+}
+
+delegate_data_device!(state::Waytest);
 
 impl SeatHandler for state::Waytest {
     type KeyboardFocus = WlSurface;

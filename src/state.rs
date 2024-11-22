@@ -1,7 +1,10 @@
 use std::{ffi::OsString, sync::Arc};
 
 use smithay::{
-    desktop::{PopupManager, Space, Window, WindowSurfaceType},
+    desktop::{
+        find_popup_root_surface, get_popup_toplevel_coords, PopupKind, PopupManager, Space, Window,
+        WindowSurfaceType,
+    },
     input::{Seat, SeatState},
     reexports::{
         calloop::{generic::Generic, EventLoop, Interest, LoopSignal, Mode, PostAction},
@@ -16,7 +19,7 @@ use smithay::{
         compositor::{CompositorClientState, CompositorState},
         output::OutputManagerState,
         selection::data_device::DataDeviceState,
-        shell::xdg::XdgShellState,
+        shell::xdg::{PopupSurface, XdgShellState},
         shm::ShmState,
         socket::ListeningSocketSource,
     },
@@ -40,6 +43,38 @@ pub struct Waytest {
     pub popups: PopupManager,
 
     pub seat: Seat<Self>,
+}
+
+impl Waytest {
+    pub fn new(event_loop: EventLoop<CalloopData>, display: Display<Self>) -> Self {}
+
+    // Xdg shell related functions
+    pub fn unconstrain_popup(&self, popup: &PopupSurface) {
+        let Ok(root) = find_popup_root_surface(&PopupKind::Xdg(popup.clone())) else {
+            return;
+        };
+
+        let Some(window) = self
+            .space
+            .elements()
+            .find(|w| w.toplevel().unwrap().wl_surface() == &root)
+        else {
+            return;
+        };
+
+        let output = self.space.outputs().next().unwrap();
+        let output_geo = self.space.output_geometry(output).unwrap();
+        let window_geo = self.space.element_geometry(window).unwrap();
+
+        // The target geometry for the positioner should be relative to its parent's geometry, so we will compute that here.
+        let mut target = output_geo;
+        target.loc -= get_popup_toplevel_coords(&PopupKind::Xdg(popup.clone()));
+        target.loc -= window_geo.loc;
+
+        popup.with_pending_state(|state| {
+            state.geometry = state.positioner.get_unconstrained_geometry(target);
+        });
+    }
 }
 
 pub struct CalloopData {

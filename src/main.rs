@@ -1,3 +1,6 @@
+use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
+use state::CalloopData;
+
 mod backend;
 mod handlers;
 mod state;
@@ -16,7 +19,7 @@ struct StartSettings {
     backend: Backend,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Enable tracing showing in cmd
     init_tracing();
 
@@ -28,6 +31,10 @@ fn main() {
     };
 
     parse_args(args, &mut start_settings);
+
+    let mut event_loop: EventLoop<CalloopData> = EventLoop::try_new()?;
+    let display: Display<state::Waytest> = Display::new()?;
+    let state = state::Waytest::new(&mut event_loop, display);
 
     match start_settings.backend {
         Backend::Winit => {
