@@ -34,19 +34,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut event_loop: EventLoop<CalloopData> = EventLoop::try_new()?;
     let display: Display<state::Waytest> = Display::new()?;
+    let display_handle = display.handle();
     let state = state::Waytest::new(&mut event_loop, display);
+    let mut data = CalloopData {
+        state,
+        display_handle,
+    };
 
     match start_settings.backend {
         Backend::Winit => {
             tracing::info!("Starting compositor with winit backend.");
-            backend::winit::run_winit();
+            backend::winit::run_winit(&mut event_loop, &mut data)?;
         }
         Backend::TtyUdev => {
             tracing::info!("Starting compositor with tty-udev backend.");
         }
     }
 
-    tracing::info!("Compositor is shutting down.")
+    event_loop.run(None, &mut data, move |_| {
+        // Compositor is running
+    })?;
+
+    tracing::info!("Compositor is shutting down.");
+
+    Ok(())
 }
 
 fn parse_args(args: Vec<String>, start_settings: &mut StartSettings) {

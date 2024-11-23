@@ -3,14 +3,18 @@ mod xdg_shell;
 
 use crate::state;
 use smithay::{
-    delegate_data_device, delegate_seat,
+    delegate_data_device, delegate_output, delegate_seat,
     input::{Seat, SeatHandler, SeatState},
     reexports::wayland_server::{protocol::wl_surface::WlSurface, Resource},
-    wayland::selection::{
-        data_device::{
-            set_data_device_focus, ClientDndGrabHandler, DataDeviceHandler, ServerDndGrabHandler,
+    wayland::{
+        output::OutputHandler,
+        selection::{
+            data_device::{
+                set_data_device_focus, ClientDndGrabHandler, DataDeviceHandler,
+                ServerDndGrabHandler,
+            },
+            SelectionHandler,
         },
-        SelectionHandler,
     },
 };
 
@@ -83,3 +87,7 @@ impl SeatHandler for state::Waytest {
 }
 
 delegate_seat!(state::Waytest);
+
+impl OutputHandler for state::Waytest {}
+
+delegate_output!(state::Waytest);
